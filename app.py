@@ -906,37 +906,48 @@ elif page == "通信链路":
     with col1:
         st.markdown("### 🌐 网络拓扑图")
         
-        # 使用Graphviz或Mermaid显示拓扑
-        import graphviz
-        
-        dot = graphviz.Digraph()
-        dot.attr(rankdir='LR')
-        dot.attr('node', shape='box', style='rounded,filled')
-        
         nodes = st.session_state.comm_topology.get_nodes()
-        for node_id, node in nodes.items():
-            if node['status'] == 'online':
-                color = '#90EE90'
-            elif node['status'] == 'offline':
-                color = '#FFB6C1'
-            else:
-                color = '#FFE4B5'
-            
-            dot.node(node_id, f"{node['name']}\n{node['ip']}", fillcolor=color)
-        
         links = st.session_state.comm_topology.get_links()
-        for link_id, link in links.items():
-            if link['status'] == 'active':
-                style = 'solid'
-                color = 'green'
-            else:
-                style = 'dashed'
-                color = 'gray'
-            
-            label = f"{link['protocol']}\n{link['latency']}ms"
-            dot.edge(link['source'], link['target'], label=label, style=style, color=color)
         
-        st.graphviz_chart(dot.source)
+        # 尝试使用Graphviz显示拓扑，云端未安装则回退到文本表格
+        try:
+            import graphviz
+            dot = graphviz.Digraph()
+            dot.attr(rankdir='LR')
+            dot.attr('node', shape='box', style='rounded,filled')
+            
+            for node_id, node in nodes.items():
+                if node['status'] == 'online':
+                    color = '#90EE90'
+                elif node['status'] == 'offline':
+                    color = '#FFB6C1'
+                else:
+                    color = '#FFE4B5'
+                dot.node(node_id, f"{node['name']}\n{node['ip']}", fillcolor=color)
+            
+            for link_id, link in links.items():
+                if link['status'] == 'active':
+                    style = 'solid'
+                    color = 'green'
+                else:
+                    style = 'dashed'
+                    color = 'gray'
+                label = f"{link['protocol']}\n{link['latency']}ms"
+                dot.edge(link['source'], link['target'], label=label, style=style, color=color)
+            
+            st.graphviz_chart(dot.source)
+        except Exception:
+            # 云端未安装graphviz系统包，使用文本表格回退
+            st.info("拓扑图以表格形式展示（云端环境未安装Graphviz系统包）")
+            topo_data = []
+            for link_id, link in links.items():
+                topo_data.append({
+                    "链路": f"{link['source']} → {link['target']}",
+                    "协议": link['protocol'],
+                    "延迟(ms)": link['latency'],
+                    "状态": link['status']
+                })
+            st.table(topo_data)
     
     with col2:
         st.markdown("### 📊 节点状态")

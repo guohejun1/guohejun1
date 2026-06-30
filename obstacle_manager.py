@@ -32,14 +32,14 @@ class ObstacleManager:
             self.obstacles = []
     
     def save_obstacles(self):
-        """保存障碍物到JSON文件"""
+        """保存障碍物到JSON文件（云端只读环境会静默失败，仅内存保存）"""
         file_path = self.get_file_path()
         try:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(self.obstacles, f, ensure_ascii=False, indent=2)
             return True
-        except Exception as e:
-            print(f"保存障碍物失败: {e}")
+        except Exception:
+            # Streamlit Cloud 等只读环境无法写入文件，仅在内存中保存
             return False
     
     def add_obstacle(self, name, polygon_points, height, safety_radius=10.0):
